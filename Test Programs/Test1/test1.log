@@ -1,0 +1,2 @@
+test1.asm: warning: label 'label' is defined but never used
+1 warning(s)

@@ -1,0 +1,11 @@
+.\02_binary_search.asm:151: warning: data has no label and cannot be referenced
+.\02_binary_search.asm:152: warning: data has no label and cannot be referenced
+.\02_binary_search.asm:153: warning: data has no label and cannot be referenced
+.\02_binary_search.asm:154: warning: data has no label and cannot be referenced
+.\02_binary_search.asm:155: warning: data has no label and cannot be referenced
+.\02_binary_search.asm:156: warning: data has no label and cannot be referenced
+.\02_binary_search.asm:157: warning: data has no label and cannot be referenced
+.\02_binary_search.asm:158: warning: data has no label and cannot be referenced
+.\02_binary_search.asm:159: warning: data has no label and cannot be referenced
+.\02_binary_search.asm: warning: label 'goright' is defined but never used
+10 warning(s)

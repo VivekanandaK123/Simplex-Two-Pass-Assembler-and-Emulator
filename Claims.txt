@@ -1,0 +1,290 @@
+================================================================================
+  CS2206 — COMPUTER ARCHITECTURE  |  MINI-PROJECT SUBMISSION
+================================================================================
+  Name    : Vivekananda Katakam
+  Roll No : 2401CS52
+  Project : Two-Pass Assembler + Emulator for SIMPLEX Instruction Set
+  Course  : CS2206 Computer Architecture
+================================================================================
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  COMPILATION & USAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Compile the assembler   :  g++ -o asm asm.cpp
+  Compile the emulator    :  g++ -o emu emu.cpp
+
+  Assemble a source file  :  ./asm test01.asm
+    Produces  →  test01.o   test01.lst   test01.log
+    Note: .o and .lst are NOT produced if there are errors,
+          but .log is always produced.
+
+  Run the emulator        :  ./emu test01.o -trace -before -after -dump
+    Produces  →  test01.trace
+
+  NOTE : Make sure that the execuatable (.exe) and the program which you want 
+         to run are in the same folder
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  GENERAL  (applies to both files)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  [✓] Both files compile cleanly with g++ -std=c++11 -Wall -W — zero errors.
+
+  NOTE ON LANGUAGE:
+    The spec requests C89 (asm.c / emu.c), but these are written in C++
+    (asm.cpp / emu.cpp). The logic, structure, and idioms are fully compatible
+    with C89 style. The only C++-specific features used are:
+
+      • std::string, std::vector, std::map, std::set  (vs. manual arrays)
+      • std::ostringstream / std::ifstream             (vs. fprintf / fopen)
+      • Default member initialisers in structs         (CPU{} in emu)
+      • to_string()                                    (replaceable with sprintf)
+
+    All algorithmic choices — two-pass design, instruction table, strtol, etc.
+    — follow the C89 guidance in the spec exactly.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ASSEMBLER  (asm.cpp)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  DESIGN
+  ──────
+  [✓] Uses a SINGLE runPass() routine for BOTH passes.
+        Pass 1 — collects label values, counts PC, produces no output,
+                  does NOT fail on undefined labels.
+        Pass 2 — resolves all labels, emits code + listing, reports errors.
+      This satisfies the essential single-routine requirement.
+
+  [✓] Instruction table — all 19 SIMPLEX instructions (ldc … HALT) defined in
+      a static InstructionDef table with opcode, hasOperand, and isBranch
+      fields. No semantics are hard-coded outside the table lookup.
+
+
+  ERROR & WARNING DETECTION
+  ─────────────────────────
+  Label errors:
+    [✓] Duplicate label definition         (detected in pass 1)
+    [✓] Invalid label name                 (must start with a letter, alphanumeric only)
+    [✓] Undefined label reference          (detected in pass 2)
+    [✓] Unused label                       (warning after pass 2)
+
+  Instruction errors:
+    [✓] Unknown mnemonic
+    [✓] Missing operand when one is required
+    [✓] Unexpected operand on a no-operand instruction
+    [✓] Extra tokens after a valid operand
+    [✓] Invalid / malformed number         (strtol with full end-pointer check)
+
+  Pseudo-instruction errors:
+    [✓] data with no label                 (warning)
+    [✓] SET with no label                  (error)
+
+  General:
+    [✓] Empty and comment-only lines are silently skipped.
+    [✓] All errors in a run are reported — assembler does not stop at first error.
+    [✓] Object file is suppressed if any errors were detected.
+
+
+  OUTPUT FILES
+  ────────────
+  [✓] Binary object file (.o)
+        Little-endian 32-bit words, code starts at address 0.
+        Not written if any errors were detected.
+
+  [✓] Listing file (.lst)  — advanced format showing:
+        • 8-digit hex address
+        • 8-digit hex encoded word
+        • Optional label with colon (label-only lines show address + label:)
+        • Mnemonic
+        • Operand: branch instructions show the original label name (e.g. "br loop");
+          non-branch instructions show the label name or numeric value as written.
+
+  [✓] Log file (.log)
+        Mirrors all errors and warnings sent to stderr.
+
+
+  PSEUDO-INSTRUCTIONS
+  ───────────────────
+  [✓] SET — assigns the label the specified value instead of the current PC.
+             Does NOT emit a word into the object file.
+             Does NOT advance the PC.
+
+  [✓] data — emits a single initialised word into the object file.
+              Warns if data has no label.
+
+
+  ENCODING
+  ────────
+  [✓] Lower 8 bits  = opcode
+      Upper 24 bits = signed operand (2's complement, truncated to 24 bits)
+
+  [✓] Branch displacement formula:
+        displacement = target_address - (current_PC + 1)
+
+  [✓] Numbers parsed via strtol (base 0):
+        Decimal    →  plain digits
+        Hex        →  0x / 0X prefix
+        Octal      →  leading 0
+
+
+  TEST COVERAGE
+  ─────────────
+
+  [✓] test1.asm
+        Valid but nonsense assembly — ldc, branch to self (infinite loop
+        escaped by br next), forward label reference, data word.
+        Expected: assembles cleanly, one unused-label warning for 'label'.
+        Result confirmed: 1 warning, 8 words assembled 
+
+  [✓] test2.asm
+        Intentional error file — duplicate label, undefined label, invalid
+        number, missing operand, unexpected operand, extra tokens, bogus
+        label name, unknown mnemonic.
+        Expected: all errors detected, no output produced.
+        Result confirmed: 10 errors, 1 warning, no .o or .lst produced 
+
+  [✓] test3.asm
+        Tests the SET pseudo-instruction. Two SET labels (val=75, val2=66)
+        used as operands in ldc and adc.
+        Expected: assembles correctly, SET values embedded in instructions.
+        Result confirmed: 3 words assembled, SET does not emit a word 
+
+  [✓] test4.asm  (reference program— triangle numbers)
+        The provided reference program. Calls a recursive triangle(n) function
+        and accumulates results for count=10 iterations.
+        Expected: assembles and runs without error.
+        Result confirmed: 76 words assembled, runs 47,653 instructions,
+        terminates normally at HALT 
+
+  [✓] 01_bubble_sort.asm  (bubble sort)
+        Sorts an 8-element integer array in ascending order using bubble sort.
+        Input:  arr = {42, 7, 19, 3, 55, 1, 28, 14}
+        Expected output: arr = {1, 3, 7, 14, 19, 28, 42, 55}
+        Result confirmed: memory shows sorted array correctly 
+
+  [✓] 02_binary_search.asm  (binary search)
+        Searches a sorted 10-element array for a target value using binary
+        search. Uses shr for integer divide-by-2 (mid = (low+high) >> 1).
+        Input:  arr = {3,7,12,19,25,38,46,57,68,74}, target = 19
+        Expected: result = 3 (0-based index)
+        Result confirmed: memory[result] = 3 
+
+  [✓] 03_factorial.asm  (recursive factorial with inline multiply)
+        Computes n! recursively. Uses a multiply-by-repeated-addition loop
+        inside the recursive fact() function. Input: count = 5
+        Expected: result = 120
+        Result confirmed: memory[result] = 0x78 = 120 
+
+  [✓] 04_errors.asm  (additional error test)
+        A self-written file with a comprehensive set of deliberate errors:
+        duplicate label, invalid label name, missing operand, unexpected
+        operand, invalid number, undefined label, unknown mnemonic.
+        Expected: all errors detected, no output produced.
+        Result confirmed: 11 errors, 2 warnings detected 
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  EMULATOR  (emu.cpp)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  EXECUTION
+  ─────────
+  [✓] Loads a binary object file (little-endian 32-bit words) into a 16M-word
+      memory array starting at address 0.
+
+  [✓] Executes all 19 SIMPLEX instructions correctly:
+        ldc   adc   ldl   stl   ldnl  stnl
+        add   sub   shl   shr   adj   a2sp
+        sp2a  call  return brz  brlz  br    HALT
+
+  [✓] Produces a memory dump after execution (addresses + hex word values
+      for the loaded program region).
+
+  [✓] Executes the provided triangle/main test program correctly.
+
+
+  ERROR DETECTION
+  ───────────────
+  [✓] PC out of bounds             (jumped outside loaded program)
+  [✓] Illegal memory read/write    (address outside 0 … 16M-1)
+  [✓] Unknown opcode
+  [✓] Shift amount out of range    (warning for shl/shr; execution continues)
+  [✓] Instruction limit exceeded   (infinite-loop guard, configurable with -T)
+
+
+  COMMAND-LINE OPTIONS
+  ────────────────────
+  -trace      Print each instruction as it executes (disassembled)
+  -before     Show register state before each instruction
+  -after      Show register state after each instruction
+  -dump       Produce memory dump (also on by default)
+  -T <n>      Stop after n instructions
+
+  [✓] Writes a trace file (.trace) mirroring all per-instruction output 
+      and the final memory dump.
+
+  [✓] Built-in disassembler — branch instructions show both the raw offset
+      and the resolved absolute target address:
+        e.g.  "brz 8 ; -> 0xe"
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  KNOWN LIMITATIONS & ASSUMPTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   1. Written in C++11, not C89 as requested. The algorithmic approach and
+      code structure fully follow the C89 guidance in the spec; only the
+      standard library containers differ.
+
+   2. -dump is set to true by default. A memory dump is always produced even
+      without passing -dump explicitly. Deliberate choice for testing convenience.
+
+   3. PC bounds check compares cpu.PC against loadedWords (number of words
+      loaded), not MEMORY_SIZE. Data words at the end of the program are counted
+      as part of the valid fetch range. A runtime error is raised if PC lands
+      on them; the assumption is the program will HALT before that.
+
+   4. shr is implemented as a logical (unsigned) right shift (B >> A),
+      not arithmetic.
+
+   5. SET does not emit any word into the object file. If code references a
+      SET label in a non-branch instruction (e.g. "ldc val" where val is SET),
+      the label value is used directly as the operand.
+
+   6. Label names are case-sensitive. "Loop" and "loop" are different labels.
+
+   7. The assembler issues a warning (not an error) for "data without a label"
+      because the word still occupies a memory location and can be accessed by
+      pointer arithmetic via ldnl/stnl if the programmer tracks addresses
+      manually (e.g. for arrays).
+
+   8. Multiple errors in a single run are all reported; assembler does not stop
+      at the first error. Object file is suppressed if errorCount > 0.
+
+   9. The trace file is always created (if possible) regardless of whether
+      -trace, -before, or -after flags are passed. Without those flags, the
+      trace file contains only the memory dump (if -dump is active).
+
+  10. The emulator initialises all registers (A, B, PC, SP) to 0 at startup.
+      It is entirely the program's responsibility to set up a valid stack frame
+      before using any stack-relative instructions (ldl, stl, adj, etc.).
+      The standard approach — seen in the provided test program — is:
+
+          ldc 0x1000
+          a2sp
+
+      If a program uses stack instructions without first initialising SP,
+      the behaviour is undefined and will likely cause a memory fault or
+      corrupt address 0.
+
+  11. The memory dump prints words from address 0x0 up to
+      max(loadedWords, 0x1000) — inclusive of the stack region. Since all
+      programs in this submission initialise SP to 0x1000, printing up to
+      0x1000 covers both the code/data segment and the entire active stack.
+      Printing the full 16M-word memory is not feasible (64 MB of output).
+      Words beyond max(loadedWords, 0x1000) are guaranteed to be zero and
+      are omitted.

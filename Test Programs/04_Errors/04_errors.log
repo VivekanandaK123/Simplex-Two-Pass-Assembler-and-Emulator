@@ -1,0 +1,46 @@
+.\04_errors.asm:14: error: duplicate label: 'alpha'
+.\04_errors.asm:16: error: duplicate label: 'beta'
+.\04_errors.asm:18: error: duplicate label: 'gamma'
+.\04_errors.asm:23: error: invalid label name: '0start'
+.\04_errors.asm:24: error: invalid label name: '99bad'
+.\04_errors.asm:25: error: invalid label name: '_foo'
+.\04_errors.asm:26: error: invalid label name: 'bad-lbl'
+.\04_errors.asm:31: error: unknown mnemonic: 'fibble'
+.\04_errors.asm:32: error: unknown mnemonic: 'loadit'
+.\04_errors.asm:33: error: unknown mnemonic: 'MOV'
+.\04_errors.asm:34: error: unknown mnemonic: 'nop'
+.\04_errors.asm:39: error: instruction 'ldc' requires an operand
+.\04_errors.asm:40: error: instruction 'adc' requires an operand
+.\04_errors.asm:41: error: instruction 'ldl' requires an operand
+.\04_errors.asm:42: error: instruction 'br' requires an operand
+.\04_errors.asm:43: error: instruction 'brz' requires an operand
+.\04_errors.asm:48: error: instruction 'add' takes no operand
+.\04_errors.asm:49: error: instruction 'sub' takes no operand
+.\04_errors.asm:50: error: instruction 'a2sp' takes no operand
+.\04_errors.asm:51: error: instruction 'HALT' takes no operand
+.\04_errors.asm:56: error: invalid operand: '08ge'
+.\04_errors.asm:57: error: invalid operand: '3.14'
+.\04_errors.asm:58: error: invalid operand: '0xGG'
+.\04_errors.asm:59: error: invalid operand: '12abc'
+.\04_errors.asm:64: error: undefined label: 'nonesuch'
+.\04_errors.asm:65: error: undefined label: 'missing'
+.\04_errors.asm:66: error: undefined label: 'ghost'
+.\04_errors.asm:67: error: undefined label: 'phantom'
+.\04_errors.asm:72: error: extra text after operand: '6'
+.\04_errors.asm:72: error: invalid operand: '5,'
+.\04_errors.asm:73: error: extra text after operand: '4'
+.\04_errors.asm:74: error: extra text after operand: '2'
+.\04_errors.asm:75: error: extra text after operand: '0'
+.\04_errors.asm:89: warning: data has no label and cannot be referenced
+.\04_errors.asm:90: warning: data has no label and cannot be referenced
+.\04_errors.asm:91: warning: data has no label and cannot be referenced
+.\04_errors.asm:97: error: SET must have a label
+.\04_errors.asm:98: error: SET must have a label
+.\04_errors.asm:99: error: SET must have a label
+.\04_errors.asm: warning: label 'alpha' is defined but never used
+.\04_errors.asm: warning: label 'beta' is defined but never used
+.\04_errors.asm: warning: label 'gamma' is defined but never used
+.\04_errors.asm: warning: label 'unusedA' is defined but never used
+.\04_errors.asm: warning: label 'unusedB' is defined but never used
+.\04_errors.asm: warning: label 'unusedC' is defined but never used
+36 error(s), 9 warning(s). No output produced.
