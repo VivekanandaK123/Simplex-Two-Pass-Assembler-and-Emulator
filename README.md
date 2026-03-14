@@ -120,17 +120,3 @@ All errors in a run are reported — the assembler does not stop at the first er
 
 ---
 
-## Known Limitations
-
-1. **C++11, not C89** — algorithmic approach matches the spec; only standard library containers differ.
-2. `-dump` is on by default even without the flag.
-3. PC bounds check is against `loadedWords`, not full `MEMORY_SIZE`.
-4. `shr` is a logical (unsigned) right shift.
-5. Label names are **case-sensitive** (`Loop` ≠ `loop`).
-6. Trace file is always created; without trace flags it contains only the memory dump.
-7. Memory dump covers `0x0` to `max(loadedWords, 0x1000)` — includes the active stack region but skips the unused 16M-word space.
-8. All registers (`A`, `B`, `PC`, `SP`) initialise to 0. Programs must set up SP before using stack instructions. Standard idiom:
-   ```asm
-   ldc 0x1000
-   a2sp
-   ```
