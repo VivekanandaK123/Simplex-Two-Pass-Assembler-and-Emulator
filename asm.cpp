@@ -235,7 +235,27 @@ bool runPass(const string &filename, const vector<string> &lines, int pass)
             {
                 if (pass == 1)
                 {
-                    if (labels.count(labelDef))
+                    static const char *reserved[] = {"data", "SET", nullptr};
+                    bool isReserved = false;
+                    if (findInstr(labelDef) != nullptr)
+                        isReserved = true;
+                    if (!isReserved)
+                    {
+                        for (int r = 0; reserved[r]; ++r)
+                        {
+                            if (labelDef == reserved[r])
+                            {
+                                isReserved = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isReserved)
+                    {
+                        emitError(filename, lineNo, "label name conflicts with mnemonic: '" + labelDef + "'");
+                        labelDef.clear();
+                    }
+                    else if (labels.count(labelDef))
                     {
                         emitError(filename, lineNo, "duplicate label: '" + labelDef + "'");
                     }
